@@ -1,1 +1,1297 @@
 
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TestMaster — Онлайн Тестування</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #16161f;
+    --border: #2a2a3a;
+    --accent: #7c3aed;
+    --accent2: #06b6d4;
+    --accent3: #f59e0b;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --danger: #ef4444;
+    --success: #10b981;
+    --radius: 14px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Manrope', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 30% 20%, rgba(124,58,237,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(6,182,212,0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ===== PAGES ===== */
+  .page { display: none; position: relative; z-index: 1; min-height: 100vh; }
+  .page.active { display: flex; flex-direction: column; }
+
+  /* ===== NAV ===== */
+  .nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px;
+    background: rgba(17,17,24,0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .nav-logo {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 18px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab {
+    padding: 8px 18px; border-radius: 8px; border: none;
+    background: transparent; color: var(--muted);
+    font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .nav-tab:hover { background: var(--card); color: var(--text); }
+  .nav-tab.active { background: var(--accent); color: #fff; }
+
+  /* ===== BUTTONS ===== */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: 10px; border: none;
+    font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; text-decoration: none;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #6d28d9; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,58,237,0.35); }
+  .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-danger { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-success:hover { background: #059669; transform: translateY(-1px); }
+  .btn-cyan { background: var(--accent2); color: #000; }
+  .btn-cyan:hover { background: #0891b2; }
+  .btn-lg { padding: 14px 32px; font-size: 16px; border-radius: 12px; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+
+  /* ===== FORMS ===== */
+  .input, .select, .textarea {
+    width: 100%; padding: 10px 14px; border-radius: 10px;
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border);
+    font-family: 'Manrope', sans-serif; font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  .input:focus, .select:focus, .textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+  }
+  .textarea { resize: vertical; min-height: 70px; }
+  .select option { background: var(--surface); }
+  .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 6px; }
+  .form-group { margin-bottom: 16px; }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+  }
+
+  /* ===== HOME PAGE ===== */
+  #page-home {
+    align-items: center; justify-content: center;
+    text-align: center; padding: 40px 20px;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.3);
+    border-radius: 50px; padding: 6px 16px;
+    font-size: 12px; font-weight: 600; color: #a78bfa; letter-spacing: 0.5px;
+    text-transform: uppercase; margin-bottom: 24px;
+    animation: fadeInDown 0.6s ease;
+  }
+  .hero-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: clamp(36px, 6vw, 68px); font-weight: 800;
+    line-height: 1.1; letter-spacing: -2px;
+    margin-bottom: 20px;
+    animation: fadeInUp 0.7s ease;
+  }
+  .hero-title span {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero-sub {
+    font-size: 18px; color: var(--muted); max-width: 500px;
+    line-height: 1.6; margin-bottom: 36px;
+    animation: fadeInUp 0.8s ease;
+  }
+  .hero-actions {
+    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+    animation: fadeInUp 0.9s ease;
+  }
+  .hero-stats {
+    display: flex; gap: 32px; margin-top: 60px; flex-wrap: wrap; justify-content: center;
+    animation: fadeInUp 1s ease;
+  }
+  .stat { text-align: center; }
+  .stat-num {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 28px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  /* ===== ADMIN PAGE ===== */
+  #page-admin { padding: 0; }
+  .admin-body { padding: 32px; max-width: 1100px; margin: 0 auto; flex: 1; }
+  .page-header { margin-bottom: 28px; }
+  .page-title {
+    font-family: 'Unbounded', sans-serif; font-size: 24px; font-weight: 700;
+    letter-spacing: -1px;
+  }
+  .page-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+  .admin-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 24px; }
+
+  .section-title {
+    font-family: 'Unbounded', sans-serif; font-size: 14px; font-weight: 600;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 16px;
+  }
+
+  /* Question list */
+  .question-list { display: flex; flex-direction: column; gap: 12px; }
+  .question-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; cursor: pointer; transition: all 0.2s; position: relative;
+    overflow: hidden;
+  }
+  .question-item:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .question-item.editing { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
+  .question-item-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .question-num {
+    font-family: 'Unbounded', sans-serif; font-size: 10px; font-weight: 700;
+    background: var(--accent); color: #fff; border-radius: 6px;
+    padding: 3px 8px; flex-shrink: 0;
+  }
+  .question-text { font-size: 14px; font-weight: 500; line-height: 1.4; flex: 1; }
+  .question-meta {
+    display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  }
+  .badge-time { background: rgba(245,158,11,0.15); color: var(--accent3); border: 1px solid rgba(245,158,11,0.25); }
+  .badge-answers { background: rgba(6,182,212,0.12); color: var(--accent2); border: 1px solid rgba(6,182,212,0.2); }
+  .badge-type { background: rgba(124,58,237,0.12); color: #a78bfa; border: 1px solid rgba(124,58,237,0.2); }
+  .question-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .empty-state {
+    text-align: center; padding: 48px 24px; color: var(--muted);
+    border: 2px dashed var(--border); border-radius: 12px;
+  }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* Editor */
+  .editor-card { position: sticky; top: 90px; }
+  .options-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .option-row { display: flex; gap: 8px; align-items: center; }
+  .option-row .input { flex: 1; }
+  .correct-toggle {
+    width: 36px; height: 36px; border-radius: 8px; border: 2px solid var(--border);
+    background: transparent; cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .correct-toggle.checked { border-color: var(--success); background: rgba(16,185,129,0.15); }
+
+  /* ===== TEST PAGE ===== */
+  #page-test { padding: 0; }
+  .test-body { padding: 24px; max-width: 720px; margin: 0 auto; flex: 1; }
+
+  /* Test selector */
+  #test-selector { padding: 32px 20px; max-width: 800px; margin: 0 auto; width: 100%; }
+  .test-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
+  .test-card-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px; cursor: pointer; transition: all 0.2s;
+  }
+  .test-card-item:hover { border-color: var(--accent2); transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,0.3); }
+  .test-card-title { font-family: 'Unbounded', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .test-card-meta { font-size: 13px; color: var(--muted); }
+
+  /* Start screen */
+  #test-start { text-align: center; padding: 60px 20px; }
+  .start-title { font-family: 'Unbounded', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; }
+  .start-info { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; margin: 24px 0; }
+  .info-item { display: flex; flex-direction: column; align-items: center; }
+  .info-val { font-family: 'Unbounded', sans-serif; font-size: 22px; font-weight: 700; color: var(--accent2); }
+  .info-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* Question screen */
+  #test-question { display: none; }
+  .progress-bar-wrap { margin-bottom: 24px; }
+  .progress-meta { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .progress-bar { height: 6px; background: var(--card); border-radius: 10px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 10px; transition: width 0.4s ease; }
+
+  .timer-display {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);
+    color: var(--accent3); border-radius: 10px; padding: 8px 16px;
+    font-family: 'Unbounded', sans-serif; font-size: 16px; font-weight: 700;
+    margin-bottom: 20px; transition: all 0.3s;
+  }
+  .timer-display.danger { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.35); color: var(--danger); animation: pulse 0.8s infinite; }
+
+  .question-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+  .q-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 12px; }
+  .q-text { font-size: 18px; font-weight: 600; line-height: 1.5; }
+
+  .options-grid { display: flex; flex-direction: column; gap: 10px; }
+  .option-btn {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--card); border: 2px solid var(--border); border-radius: 12px;
+    padding: 14px 18px; cursor: pointer; transition: all 0.2s; text-align: left;
+    font-family: 'Manrope', sans-serif; font-size: 15px; color: var(--text);
+  }
+  .option-btn:hover { border-color: var(--accent); background: rgba(124,58,237,0.08); }
+  .option-btn.selected { border-color: var(--accent); background: rgba(124,58,237,0.12); }
+  .option-btn.selected .opt-letter { background: var(--accent); color: #fff; }
+  .option-btn.correct { border-color: var(--success); background: rgba(16,185,129,0.1); }
+  .option-btn.wrong { border-color: var(--danger); background: rgba(239,68,68,0.1); }
+  .opt-letter {
+    width: 32px; height: 32px; border-radius: 8px; background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Unbounded', sans-serif; font-size: 11px; font-weight: 700;
+    flex-shrink: 0; transition: all 0.2s;
+  }
+
+  .text-answer-wrap { display: flex; gap: 12px; align-items: flex-start; }
+  .text-answer-wrap .textarea { flex: 1; }
+
+  .q-nav { display: flex; justify-content: space-between; align-items: center; }
+
+  /* Results */
+  #test-results { display: none; text-align: center; padding: 40px 20px; }
+  .result-circle {
+    width: 140px; height: 140px; border-radius: 50%; margin: 0 auto 24px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: 4px solid var(--accent);
+    background: radial-gradient(circle, rgba(124,58,237,0.1), transparent);
+    position: relative;
+  }
+  .result-percent { font-family: 'Unbounded', sans-serif; font-size: 32px; font-weight: 800; }
+  .result-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .result-title { font-family: 'Unbounded', sans-serif; font-size: 24px; font-weight: 800; margin-bottom: 8px; letter-spacing: -1px; }
+  .result-sub { color: var(--muted); font-size: 15px; margin-bottom: 28px; }
+  .result-stats { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px; }
+  .result-stat { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 24px; text-align: center; }
+  .result-stat-val { font-family: 'Unbounded', sans-serif; font-size: 22px; font-weight: 700; }
+  .result-stat-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* ===== MANAGE PAGE ===== */
+  #page-manage { padding: 0; }
+  .manage-body { padding: 32px; max-width: 960px; margin: 0 auto; flex: 1; }
+  .tests-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-top: 20px; }
+  .test-manage-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px;
+    transition: all 0.2s;
+  }
+  .test-manage-card:hover { border-color: var(--border); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+  .tmcard-title { font-family: 'Unbounded', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 8px; line-height: 1.3; }
+  .tmcard-meta { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  .tmcard-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 32px; width: 100%; max-width: 480px; }
+  .modal h3 { font-family: 'Unbounded', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 20px; letter-spacing: -0.5px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  /* Toast */
+  .toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 20px; font-size: 14px; font-weight: 500;
+    display: flex; align-items: center; gap: 10px;
+    animation: slideInRight 0.3s ease; min-width: 240px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .toast.success { border-color: rgba(16,185,129,0.4); }
+  .toast.error { border-color: rgba(239,68,68,0.4); }
+
+  /* Animations */
+  @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideInRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+  /* Responsive */
+  @media(max-width: 768px) {
+    .admin-grid { grid-template-columns: 1fr; }
+    .editor-card { position: static; }
+    .nav { padding: 14px 16px; }
+    .admin-body, .manage-body { padding: 16px; }
+    .nav-tab { padding: 8px 12px; font-size: 13px; }
+  }
+
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="main-nav" style="display:none">
+  <div class="nav-logo">⚡ TestMaster</div>
+  <div class="nav-tabs">
+    <button class="nav-tab" onclick="showPage('home')">🏠 Головна</button>
+    <button class="nav-tab" onclick="showPage('admin')">⚙️ Адмінка</button>
+    <button class="nav-tab" onclick="showPage('manage')">📋 Тести</button>
+    <button class="nav-tab" onclick="showPage('test')">🎯 Пройти тест</button>
+  </div>
+</nav>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toasts"></div>
+
+<!-- ============ LOGIN PAGE ============ -->
+<div class="page active" id="page-login" style="align-items:center;justify-content:center;min-height:100vh;padding:20px;">
+  <div style="width:100%;max-width:380px;text-align:center;">
+    <div style="font-family:'Unbounded',sans-serif;font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;">⚡ TestMaster</div>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:32px;">Платформа онлайн тестування</p>
+    <div class="card" style="text-align:left;">
+      <h3 style="font-family:'Unbounded',sans-serif;font-size:16px;font-weight:700;margin-bottom:20px;">Вхід в систему</h3>
+      <div class="form-group">
+        <label class="form-label">Логін</label>
+        <input class="input" id="login-user" placeholder="admin" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Пароль</label>
+        <input class="input" type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" />
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="doLogin()">Увійти →</button>
+      <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:12px;">admin / admin123</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ HOME PAGE ============ -->
+<div class="page" id="page-home">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center;">
+    <div class="hero-badge">🚀 Онлайн Тестування</div>
+    <h1 class="hero-title">Перевір свої<br><span>знання</span></h1>
+    <p class="hero-sub">Швидко створюй тести, встановлюй час на кожне питання і отримуй миттєві результати.</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary btn-lg" onclick="showPage('test')">🎯 Пройти тест</button>
+      <button class="btn btn-secondary btn-lg" onclick="showPage('admin')">⚙️ Адмінка</button>
+    </div>
+    <div class="hero-stats" id="home-stats">
+      <div class="stat"><div class="stat-num" id="stat-tests">0</div><div class="stat-label">Тестів</div></div>
+      <div class="stat"><div class="stat-num" id="stat-questions">0</div><div class="stat-label">Питань</div></div>
+      <div class="stat"><div class="stat-num" id="stat-results">0</div><div class="stat-label">Результатів</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ADMIN PAGE ============ -->
+<div class="page" id="page-admin">
+  <div class="admin-body">
+    <div class="page-header">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div class="page-title">⚙️ Адміністрування</div>
+          <div class="page-sub">Редактор питань та тестів</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <select class="select" id="admin-test-select" style="width:auto;min-width:180px;" onchange="loadTestInAdmin()">
+            <option value="">— Обери тест —</option>
+          </select>
+          <button class="btn btn-cyan" onclick="openCreateTest()">+ Новий тест</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-grid">
+      <!-- Left: Questions list -->
+      <div>
+        <div class="section-title">Питання тесту</div>
+        <div class="question-list" id="question-list">
+          <div class="empty-state">
+            <div class="icon">📝</div>
+            <p>Обери або створи тест, щоб побачити питання</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Editor -->
+      <div>
+        <div class="card editor-card">
+          <div class="section-title">Редактор питання</div>
+          <div class="form-group">
+            <label class="form-label">Текст питання *</label>
+            <textarea class="textarea" id="q-text" placeholder="Введіть текст питання..."></textarea>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group">
+              <label class="form-label">Тип</label>
+              <select class="select" id="q-type" onchange="renderOptionsEditor()">
+                <option value="single">Одна відповідь</option>
+                <option value="multiple">Кілька відповідей</option>
+                <option value="text">Текстова відповідь</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">⏱ Час (секунди)</label>
+              <input class="input" type="number" id="q-time" value="30" min="5" max="600" placeholder="30" />
+            </div>
+          </div>
+
+          <div id="options-editor"></div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="saveQuestion()">💾 Зберегти питання</button>
+            <button class="btn btn-secondary" onclick="clearEditor()">✕ Очистити</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MANAGE PAGE ============ -->
+<div class="page" id="page-manage">
+  <div class="manage-body">
+    <div class="page-header">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div class="page-title">📋 Управління тестами</div>
+          <div class="page-sub">Всі тести системи</div>
+        </div>
+        <button class="btn btn-cyan" onclick="openCreateTest()">+ Створити тест</button>
+      </div>
+    </div>
+    <div class="tests-grid" id="tests-grid">
+      <div class="empty-state" style="grid-column:1/-1;">
+        <div class="icon">📋</div>
+        <p>Ще немає жодного тесту. Створіть перший!</p>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div style="margin-top:40px;">
+      <div class="section-title">📊 Результати тестувань</div>
+      <div id="results-table" style="margin-top:12px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TEST PAGE ============ -->
+<div class="page" id="page-test">
+  <!-- Selector -->
+  <div id="test-selector">
+    <div class="page-title">🎯 Пройти тест</div>
+    <p style="color:var(--muted);font-size:14px;margin-top:4px;margin-bottom:20px;">Обери тест для проходження</p>
+    <div class="test-cards-grid" id="test-cards"></div>
+  </div>
+
+  <!-- Name input -->
+  <div id="test-name-input" style="display:none;padding:32px 20px;max-width:480px;margin:0 auto;text-align:center;">
+    <div class="page-title" style="margin-bottom:8px;">👤 Ваше ім'я</div>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:24px;">Вкажіть ваше ім'я для запису результатів</p>
+    <div class="card" style="text-align:left;">
+      <div class="form-group">
+        <label class="form-label">Ім'я та прізвище</label>
+        <input class="input" id="student-name" placeholder="Іванов Іван" onkeydown="if(event.key==='Enter')startTest()" />
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-secondary" onclick="document.getElementById('test-name-input').style.display='none';document.getElementById('test-selector').style.display='block'">← Назад</button>
+        <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="startTest()">Почати тест →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Start -->
+  <div id="test-start" style="display:none;">
+    <div class="start-title" id="start-test-title"></div>
+    <div id="start-test-desc" style="color:var(--muted);margin-bottom:20px;font-size:15px;"></div>
+    <div class="start-info">
+      <div class="info-item"><div class="info-val" id="start-q-count">0</div><div class="info-lbl">Питань</div></div>
+      <div class="info-item"><div class="info-val" id="start-avg-time">0с</div><div class="info-lbl">Сер. час</div></div>
+    </div>
+    <button class="btn btn-primary btn-lg" onclick="beginTest()">🚀 Почати!</button>
+  </div>
+
+  <!-- Question -->
+  <div id="test-question" style="max-width:720px;margin:0 auto;width:100%;padding:24px;">
+    <div class="progress-bar-wrap">
+      <div class="progress-meta">
+        <span id="q-progress-text">Питання 1 з 10</span>
+        <span id="q-score-text">0 балів</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+    <div class="timer-display" id="timer-display">⏱ 30с</div>
+    <div class="question-card">
+      <div class="q-label" id="q-type-label">ПИТАННЯ</div>
+      <div class="q-text" id="current-q-text"></div>
+    </div>
+    <div id="current-options"></div>
+    <div class="q-nav" style="margin-top:20px;">
+      <div id="q-feedback" style="font-size:14px;font-weight:600;"></div>
+      <button class="btn btn-primary" id="next-btn" onclick="nextQuestion()" style="display:none;">Наступне →</button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="test-results" style="max-width:600px;margin:0 auto;width:100%;padding:24px;">
+    <div class="result-circle">
+      <div class="result-percent" id="res-percent">0%</div>
+      <div class="result-label">результат</div>
+    </div>
+    <div class="result-title" id="res-title">Тест завершено!</div>
+    <div class="result-sub" id="res-sub"></div>
+    <div class="result-stats">
+      <div class="result-stat"><div class="result-stat-val" id="res-correct" style="color:var(--success)">0</div><div class="result-stat-lbl">Правильних</div></div>
+      <div class="result-stat"><div class="result-stat-val" id="res-wrong" style="color:var(--danger)">0</div><div class="result-stat-lbl">Неправильних</div></div>
+      <div class="result-stat"><div class="result-stat-val" id="res-time">0с</div><div class="result-stat-lbl">Час</div></div>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn btn-secondary btn-lg" onclick="showPage('test')">← Інший тест</button>
+      <button class="btn btn-primary btn-lg" onclick="retakeTest()">🔄 Пройти знову</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: CREATE TEST ============ -->
+<div class="modal-overlay" id="modal-create-test">
+  <div class="modal">
+    <h3>📋 Новий тест</h3>
+    <div class="form-group">
+      <label class="form-label">Назва тесту *</label>
+      <input class="input" id="new-test-name" placeholder="Наприклад: Математика. Тема 1" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Опис</label>
+      <textarea class="textarea" id="new-test-desc" placeholder="Короткий опис тесту..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-create-test')">Скасувати</button>
+      <button class="btn btn-primary" onclick="createTest()">Створити →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  tests: [],
+  results: [],
+  currentTestId: null,
+  editingQIdx: null,
+  // test session
+  sessionTest: null,
+  sessionStudent: '',
+  sessionAnswers: [],
+  sessionCurrent: 0,
+  sessionScore: 0,
+  sessionTimer: null,
+  sessionStartTime: null,
+  sessionCorrect: 0,
+  sessionWrong: 0
+};
+
+const ADMIN_PASS = { user: 'admin', pass: 'admin123' };
+
+// ============================================================
+// PERSISTENCE
+// ============================================================
+function save() {
+  localStorage.setItem('tm_tests', JSON.stringify(state.tests));
+  localStorage.setItem('tm_results', JSON.stringify(state.results));
+}
+function load() {
+  try { state.tests = JSON.parse(localStorage.getItem('tm_tests') || '[]'); } catch(e) { state.tests = []; }
+  try { state.results = JSON.parse(localStorage.getItem('tm_results') || '[]'); } catch(e) { state.results = []; }
+  // Seed demo test if empty
+  if (!state.tests.length) seedDemo();
+}
+function seedDemo() {
+  state.tests.push({
+    id: 'demo1',
+    name: 'Демо: Загальні знання',
+    desc: 'Тест для демонстрації можливостей системи',
+    questions: [
+      { id: 'q1', text: 'Яка столиця України?', type: 'single', time: 20, options: ['Київ','Харків','Львів','Одеса'], correct: [0] },
+      { id: 'q2', text: 'Скільки місяців в році?', type: 'single', time: 15, options: ['10','11','12','13'], correct: [2] },
+      { id: 'q3', text: 'Які планети є газовими гігантами? (кілька відповідей)', type: 'multiple', time: 40, options: ['Земля','Юпітер','Сатурн','Марс'], correct: [1,2] },
+      { id: 'q4', text: 'Напишіть столицю Франції', type: 'text', time: 25, options: [], correct: [], answer: 'париж' }
+    ]
+  });
+  save();
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  if (u === ADMIN_PASS.user && p === ADMIN_PASS.pass) {
+    document.getElementById('page-login').classList.remove('active');
+    document.getElementById('main-nav').style.display = 'flex';
+    showPage('home');
+    toast('Ласкаво просимо! 👋', 'success');
+  } else {
+    toast('Невірний логін або пароль', 'error');
+    document.getElementById('login-pass').style.borderColor = 'var(--danger)';
+    setTimeout(() => document.getElementById('login-pass').style.borderColor = '', 1500);
+  }
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const tabs = document.querySelectorAll('.nav-tab');
+  const map = { home: 0, admin: 1, manage: 2, test: 3 };
+  if (map[name] !== undefined) tabs[map[name]].classList.add('active');
+
+  if (name === 'home') updateHomeStats();
+  if (name === 'admin') initAdmin();
+  if (name === 'manage') renderManage();
+  if (name === 'test') initTestPage();
+}
+
+// ============================================================
+// HOME
+// ============================================================
+function updateHomeStats() {
+  document.getElementById('stat-tests').textContent = state.tests.length;
+  const total = state.tests.reduce((s, t) => s + t.questions.length, 0);
+  document.getElementById('stat-questions').textContent = total;
+  document.getElementById('stat-results').textContent = state.results.length;
+}
+
+// ============================================================
+// ADMIN
+// ============================================================
+function initAdmin() {
+  renderAdminTestSelect();
+  renderOptionsEditor();
+}
+
+function renderAdminTestSelect() {
+  const sel = document.getElementById('admin-test-select');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Обери тест —</option>';
+  state.tests.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id; o.textContent = t.name;
+    if (t.id === cur || t.id === state.currentTestId) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+function loadTestInAdmin() {
+  const id = document.getElementById('admin-test-select').value;
+  state.currentTestId = id;
+  renderQuestionList();
+  clearEditor();
+}
+
+function renderQuestionList() {
+  const list = document.getElementById('question-list');
+  const test = state.tests.find(t => t.id === state.currentTestId);
+  if (!test) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>Обери або створи тест</p></div>';
+    return;
+  }
+  if (!test.questions.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">❓</div><p>Немає питань. Додайте перше!</p></div>';
+    return;
+  }
+  list.innerHTML = '';
+  test.questions.forEach((q, i) => {
+    const typeLabel = { single: 'Одна', multiple: 'Кілька', text: 'Текст' }[q.type];
+    const div = document.createElement('div');
+    div.className = 'question-item' + (state.editingQIdx === i ? ' editing' : '');
+    div.innerHTML = `
+      <div class="question-item-header">
+        <span class="question-num">#${i+1}</span>
+        <span class="question-text">${q.text}</span>
+        <div class="question-actions">
+          <button class="btn btn-secondary btn-sm" onclick="editQuestion(${i})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteQuestion(${i})">🗑</button>
+        </div>
+      </div>
+      <div class="question-meta">
+        <span class="badge badge-time">⏱ ${q.time}с</span>
+        <span class="badge badge-type">${typeLabel}</span>
+        ${q.type !== 'text' ? `<span class="badge badge-answers">${q.options.length} варіантів</span>` : ''}
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function renderOptionsEditor() {
+  const type = document.getElementById('q-type').value;
+  const wrap = document.getElementById('options-editor');
+  if (type === 'text') {
+    wrap.innerHTML = `<div class="form-group"><label class="form-label">Правильна відповідь (для перевірки)</label><input class="input" id="text-correct" placeholder="Введіть правильну відповідь..." /></div>`;
+    return;
+  }
+  wrap.innerHTML = `
+    <div class="form-group">
+      <label class="form-label">Варіанти відповідей <span style="color:var(--muted);font-weight:400;">(✔ = правильна)</span></label>
+      <div class="options-list" id="options-list"></div>
+      <button class="btn btn-secondary btn-sm" onclick="addOption()" style="margin-top:8px;">+ Додати варіант</button>
+    </div>`;
+  // Add 4 default options if empty
+  const existing = wrap._opts || [];
+  const count = existing.length || 4;
+  for (let i = 0; i < count; i++) addOption();
+}
+
+function addOption(val = '', isCorrect = false) {
+  const list = document.getElementById('options-list');
+  if (!list) return;
+  const idx = list.children.length;
+  const letters = 'ABCDEFGHIJ';
+  const row = document.createElement('div');
+  row.className = 'option-row';
+  row.innerHTML = `
+    <span style="font-family:'Unbounded',sans-serif;font-size:11px;font-weight:700;color:var(--muted);width:20px;text-align:center;">${letters[idx]}</span>
+    <input class="input" placeholder="Варіант ${letters[idx]}" value="${val}" />
+    <button class="correct-toggle ${isCorrect ? 'checked' : ''}" onclick="toggleCorrect(this)" title="Правильна?">✔</button>
+    <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()" style="padding:6px 10px;">✕</button>`;
+  list.appendChild(row);
+}
+
+function toggleCorrect(btn) {
+  const type = document.getElementById('q-type').value;
+  if (type === 'single') {
+    document.querySelectorAll('#options-list .correct-toggle').forEach(b => b.classList.remove('checked'));
+  }
+  btn.classList.toggle('checked');
+}
+
+function saveQuestion() {
+  const test = state.tests.find(t => t.id === state.currentTestId);
+  if (!test) { toast('Спочатку оберіть тест!', 'error'); return; }
+
+  const text = document.getElementById('q-text').value.trim();
+  const type = document.getElementById('q-type').value;
+  const time = parseInt(document.getElementById('q-time').value) || 30;
+
+  if (!text) { toast('Введіть текст питання!', 'error'); return; }
+
+  const q = { id: 'q' + Date.now(), text, type, time, options: [], correct: [], answer: '' };
+
+  if (type === 'text') {
+    q.answer = (document.getElementById('text-correct')?.value || '').trim().toLowerCase();
+  } else {
+    const rows = document.querySelectorAll('#options-list .option-row');
+    rows.forEach((row, i) => {
+      const val = row.querySelector('input').value.trim();
+      if (val) {
+        q.options.push(val);
+        if (row.querySelector('.correct-toggle.checked')) q.correct.push(q.options.length - 1);
+      }
+    });
+    if (!q.options.length) { toast('Додайте хоча б один варіант!', 'error'); return; }
+    if (!q.correct.length) { toast('Позначте правильну відповідь!', 'error'); return; }
+  }
+
+  if (state.editingQIdx !== null) {
+    q.id = test.questions[state.editingQIdx].id;
+    test.questions[state.editingQIdx] = q;
+    toast('Питання оновлено ✓', 'success');
+  } else {
+    test.questions.push(q);
+    toast('Питання додано ✓', 'success');
+  }
+
+  state.editingQIdx = null;
+  save();
+  renderQuestionList();
+  clearEditor();
+}
+
+function editQuestion(idx) {
+  const test = state.tests.find(t => t.id === state.currentTestId);
+  if (!test) return;
+  const q = test.questions[idx];
+  state.editingQIdx = idx;
+
+  document.getElementById('q-text').value = q.text;
+  document.getElementById('q-type').value = q.type;
+  document.getElementById('q-time').value = q.time;
+  renderOptionsEditor();
+
+  if (q.type === 'text') {
+    document.getElementById('text-correct').value = q.answer || '';
+  } else {
+    document.getElementById('options-list').innerHTML = '';
+    q.options.forEach((opt, i) => addOption(opt, q.correct.includes(i)));
+  }
+  renderQuestionList();
+  document.querySelector('.editor-card').scrollIntoView({ behavior: 'smooth' });
+}
+
+function deleteQuestion(idx) {
+  const test = state.tests.find(t => t.id === state.currentTestId);
+  if (!test) return;
+  test.questions.splice(idx, 1);
+  if (state.editingQIdx === idx) { state.editingQIdx = null; clearEditor(); }
+  save();
+  renderQuestionList();
+  toast('Питання видалено', 'success');
+}
+
+function clearEditor() {
+  state.editingQIdx = null;
+  document.getElementById('q-text').value = '';
+  document.getElementById('q-type').value = 'single';
+  document.getElementById('q-time').value = '30';
+  renderOptionsEditor();
+  renderQuestionList();
+}
+
+// ============================================================
+// TESTS CRUD
+// ============================================================
+function openCreateTest() {
+  document.getElementById('new-test-name').value = '';
+  document.getElementById('new-test-desc').value = '';
+  openModal('modal-create-test');
+}
+
+function createTest() {
+  const name = document.getElementById('new-test-name').value.trim();
+  if (!name) { toast('Введіть назву тесту!', 'error'); return; }
+  const test = {
+    id: 'test_' + Date.now(),
+    name,
+    desc: document.getElementById('new-test-desc').value.trim(),
+    questions: []
+  };
+  state.tests.push(test);
+  state.currentTestId = test.id;
+  save();
+  closeModal('modal-create-test');
+  toast('Тест створено! ✓', 'success');
+  renderAdminTestSelect();
+  document.getElementById('admin-test-select').value = test.id;
+  renderQuestionList();
+  renderManage();
+}
+
+function deleteTest(id) {
+  if (!confirm('Видалити тест?')) return;
+  state.tests = state.tests.filter(t => t.id !== id);
+  if (state.currentTestId === id) state.currentTestId = null;
+  save();
+  renderManage();
+  initAdmin();
+  toast('Тест видалено', 'success');
+}
+
+// ============================================================
+// MANAGE PAGE
+// ============================================================
+function renderManage() {
+  const grid = document.getElementById('tests-grid');
+  if (!state.tests.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="icon">📋</div><p>Ще немає жодного тесту. Створіть перший!</p></div>';
+  } else {
+    grid.innerHTML = '';
+    state.tests.forEach(t => {
+      const totalTime = t.questions.reduce((s, q) => s + q.time, 0);
+      const div = document.createElement('div');
+      div.className = 'test-manage-card';
+      div.innerHTML = `
+        <div class="tmcard-title">${t.name}</div>
+        <div class="tmcard-meta">${t.desc || 'Без опису'} · ${t.questions.length} питань · ≈${totalTime}с</div>
+        <div class="tmcard-actions">
+          <button class="btn btn-secondary btn-sm" onclick="editTestInAdmin('${t.id}')">✏️ Редагувати</button>
+          <button class="btn btn-cyan btn-sm" onclick="goTest('${t.id}')">🎯 Пройти</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteTest('${t.id}')">🗑</button>
+        </div>`;
+      grid.appendChild(div);
+    });
+  }
+
+  // Results table
+  const rt = document.getElementById('results-table');
+  if (!state.results.length) {
+    rt.innerHTML = '<div class="empty-state"><div class="icon">📊</div><p>Результатів поки немає</p></div>';
+    return;
+  }
+  let html = `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr style="border-bottom:1px solid var(--border);">
+      ${['Студент','Тест','Результат','Правильних','Час','Дата'].map(h => `<th style="padding:10px 12px;text-align:left;color:var(--muted);font-weight:600;">${h}</th>`).join('')}
+    </tr></thead><tbody>`;
+  state.results.slice().reverse().forEach(r => {
+    const color = r.pct >= 80 ? 'var(--success)' : r.pct >= 50 ? 'var(--accent3)' : 'var(--danger)';
+    html += `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px 12px;font-weight:500;">${r.student}</td>
+      <td style="padding:10px 12px;color:var(--muted);">${r.testName}</td>
+      <td style="padding:10px 12px;font-weight:700;color:${color};">${r.pct}%</td>
+      <td style="padding:10px 12px;">${r.correct}/${r.total}</td>
+      <td style="padding:10px 12px;color:var(--muted);">${r.timeTaken}с</td>
+      <td style="padding:10px 12px;color:var(--muted);">${r.date}</td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  rt.innerHTML = html;
+}
+
+function editTestInAdmin(id) {
+  state.currentTestId = id;
+  showPage('admin');
+  document.getElementById('admin-test-select').value = id;
+  renderQuestionList();
+}
+
+// ============================================================
+// TEST SESSION
+// ============================================================
+function initTestPage() {
+  stopTimer();
+  document.getElementById('test-selector').style.display = 'block';
+  document.getElementById('test-name-input').style.display = 'none';
+  document.getElementById('test-start').style.display = 'none';
+  document.getElementById('test-question').style.display = 'none';
+  document.getElementById('test-results').style.display = 'none';
+
+  const cards = document.getElementById('test-cards');
+  if (!state.tests.length) {
+    cards.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="icon">📋</div><p>Немає доступних тестів. Зверніться до адміністратора.</p></div>';
+    return;
+  }
+  cards.innerHTML = '';
+  state.tests.forEach(t => {
+    const totalTime = t.questions.reduce((s, q) => s + q.time, 0);
+    const div = document.createElement('div');
+    div.className = 'test-card-item';
+    div.innerHTML = `
+      <div class="test-card-title">${t.name}</div>
+      <div class="test-card-meta" style="margin-bottom:16px;">${t.desc || 'Натисніть, щоб розпочати'}</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+        <span class="badge badge-answers">${t.questions.length} питань</span>
+        <span class="badge badge-time">≈${totalTime}с</span>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="selectTest('${t.id}')">Почати →</button>`;
+    cards.appendChild(div);
+  });
+}
+
+function goTest(id) {
+  showPage('test');
+  selectTest(id);
+}
+
+function selectTest(id) {
+  const test = state.tests.find(t => t.id === id);
+  if (!test || !test.questions.length) { toast('Тест порожній!', 'error'); return; }
+  state.sessionTest = test;
+  document.getElementById('test-selector').style.display = 'none';
+  document.getElementById('test-name-input').style.display = 'block';
+  document.getElementById('student-name').value = '';
+  document.getElementById('student-name').focus();
+}
+
+function startTest() {
+  const name = document.getElementById('student-name').value.trim();
+  if (!name) { toast('Введіть ваше ім\'я!', 'error'); return; }
+  state.sessionStudent = name;
+  const test = state.sessionTest;
+  const avgTime = Math.round(test.questions.reduce((s, q) => s + q.time, 0) / test.questions.length);
+
+  document.getElementById('test-name-input').style.display = 'none';
+  document.getElementById('test-start').style.display = 'block';
+  document.getElementById('start-test-title').textContent = test.name;
+  document.getElementById('start-test-desc').textContent = test.desc || '';
+  document.getElementById('start-q-count').textContent = test.questions.length;
+  document.getElementById('start-avg-time').textContent = avgTime + 'с';
+}
+
+function beginTest() {
+  document.getElementById('test-start').style.display = 'none';
+  document.getElementById('test-question').style.display = 'block';
+  state.sessionAnswers = [];
+  state.sessionCurrent = 0;
+  state.sessionScore = 0;
+  state.sessionCorrect = 0;
+  state.sessionWrong = 0;
+  state.sessionStartTime = Date.now();
+  showQuestion();
+}
+
+function showQuestion() {
+  const test = state.sessionTest;
+  const qi = state.sessionCurrent;
+  const q = test.questions[qi];
+
+  document.getElementById('q-progress-text').textContent = `Питання ${qi + 1} з ${test.questions.length}`;
+  document.getElementById('q-score-text').textContent = `${state.sessionScore} балів`;
+  document.getElementById('progress-fill').style.width = (qi / test.questions.length * 100) + '%';
+  document.getElementById('current-q-text').textContent = q.text;
+  document.getElementById('q-feedback').textContent = '';
+  document.getElementById('next-btn').style.display = 'none';
+
+  const typeLabels = { single: 'ОБЕРІТЬ ОДНУ ВІДПОВІДЬ', multiple: 'ОБЕРІТЬ ВСІ ПРАВИЛЬНІ', text: 'ТЕКСТОВА ВІДПОВІДЬ' };
+  document.getElementById('q-type-label').textContent = typeLabels[q.type];
+
+  const optWrap = document.getElementById('current-options');
+  const letters = 'ABCDEFGHIJ';
+
+  if (q.type === 'text') {
+    optWrap.innerHTML = `
+      <div class="text-answer-wrap">
+        <textarea class="textarea" id="text-input" placeholder="Введіть вашу відповідь..." style="min-height:90px;"></textarea>
+      </div>
+      <div style="margin-top:12px;"><button class="btn btn-primary" onclick="submitTextAnswer()">Відповісти →</button></div>`;
+  } else {
+    optWrap.innerHTML = '<div class="options-grid" id="opt-grid"></div>';
+    const grid = document.getElementById('opt-grid');
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.dataset.idx = i;
+      btn.innerHTML = `<span class="opt-letter">${letters[i]}</span><span>${opt}</span>`;
+      btn.onclick = () => selectOption(btn, i);
+      grid.appendChild(btn);
+    });
+    if (q.type === 'multiple') {
+      optWrap.innerHTML += `<div style="margin-top:14px;"><button class="btn btn-primary" onclick="submitMultiple()">Відповісти →</button></div>`;
+    }
+  }
+
+  startTimer(q.time);
+}
+
+let timerInterval = null;
+function startTimer(secs) {
+  stopTimer();
+  let remaining = secs;
+  updateTimerDisplay(remaining);
+  timerInterval = setInterval(() => {
+    remaining--;
+    updateTimerDisplay(remaining);
+    if (remaining <= 0) {
+      stopTimer();
+      timeOut();
+    }
+  }, 1000);
+}
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+function updateTimerDisplay(s) {
+  const el = document.getElementById('timer-display');
+  el.textContent = `⏱ ${s}с`;
+  el.className = 'timer-display' + (s <= 5 ? ' danger' : '');
+}
+function timeOut() {
+  disableOptions();
+  showFeedback(false, 'Час вийшов! ⏰');
+  state.sessionWrong++;
+  document.getElementById('next-btn').style.display = 'inline-flex';
+}
+
+function selectOption(btn, idx) {
+  const q = state.sessionTest.questions[state.sessionCurrent];
+  if (q.type === 'single') {
+    document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    stopTimer();
+    disableOptions();
+    const correct = q.correct.includes(idx);
+    highlightCorrect(q);
+    if (correct) {
+      state.sessionScore += 10;
+      state.sessionCorrect++;
+      showFeedback(true, 'Правильно! +10 балів 🎉');
+    } else {
+      state.sessionWrong++;
+      showFeedback(false, 'Неправильно 😕');
+    }
+    document.getElementById('next-btn').style.display = 'inline-flex';
+  } else {
+    btn.classList.toggle('selected');
+  }
+}
+
+function submitMultiple() {
+  const q = state.sessionTest.questions[state.sessionCurrent];
+  stopTimer();
+  const selected = [...document.querySelectorAll('.option-btn.selected')].map(b => parseInt(b.dataset.idx));
+  const correct = JSON.stringify(selected.sort()) === JSON.stringify(q.correct.sort());
+  disableOptions();
+  highlightCorrect(q);
+  if (correct) {
+    state.sessionScore += 10;
+    state.sessionCorrect++;
+    showFeedback(true, 'Правильно! +10 балів 🎉');
+  } else {
+    state.sessionWrong++;
+    showFeedback(false, 'Неправильно 😕');
+  }
+  document.getElementById('next-btn').style.display = 'inline-flex';
+}
+
+function submitTextAnswer() {
+  const q = state.sessionTest.questions[state.sessionCurrent];
+  const val = (document.getElementById('text-input')?.value || '').trim().toLowerCase();
+  stopTimer();
+  document.getElementById('text-input').disabled = true;
+  document.querySelector('#current-options button').style.display = 'none';
+  const correct = q.answer && val === q.answer.toLowerCase();
+  if (correct) {
+    state.sessionScore += 10;
+    state.sessionCorrect++;
+    showFeedback(true, 'Правильно! +10 балів 🎉');
+  } else {
+    state.sessionWrong++;
+    if (q.answer) showFeedback(false, `Правильна відповідь: ${q.answer}`);
+    else showFeedback(false, 'Неправильно 😕');
+  }
+  document.getElementById('next-btn').style.display = 'inline-flex';
+}
+
+function highlightCorrect(q) {
+  document.querySelectorAll('.option-btn').forEach(b => {
+    const i = parseInt(b.dataset.idx);
+    if (q.correct.includes(i)) b.classList.add('correct');
+    else if (b.classList.contains('selected')) b.classList.add('wrong');
+  });
+}
+function disableOptions() {
+  document.querySelectorAll('.option-btn').forEach(b => b.style.pointerEvents = 'none');
+}
+function showFeedback(ok, msg) {
+  const el = document.getElementById('q-feedback');
+  el.textContent = msg;
+  el.style.color = ok ? 'var(--success)' : 'var(--danger)';
+}
+
+function nextQuestion() {
+  state.sessionCurrent++;
+  if (state.sessionCurrent >= state.sessionTest.questions.length) {
+    finishTest();
+  } else {
+    showQuestion();
+  }
+}
+
+function finishTest() {
+  stopTimer();
+  document.getElementById('test-question').style.display = 'none';
+  document.getElementById('test-results').style.display = 'block';
+
+  const total = state.sessionTest.questions.length;
+  const pct = Math.round(state.sessionCorrect / total * 100);
+  const timeTaken = Math.round((Date.now() - state.sessionStartTime) / 1000);
+
+  document.getElementById('res-percent').textContent = pct + '%';
+  document.getElementById('res-correct').textContent = state.sessionCorrect;
+  document.getElementById('res-wrong').textContent = state.sessionWrong;
+  document.getElementById('res-time').textContent = timeTaken + 'с';
+
+  let title, sub;
+  if (pct >= 90) { title = 'Відмінно! 🏆'; sub = 'Блискучий результат! Ти справжній експерт!'; }
+  else if (pct >= 70) { title = 'Добре! 👍'; sub = 'Непоганий результат. Є куди рости!'; }
+  else if (pct >= 50) { title = 'Задовільно 😐'; sub = 'Матеріал засвоєно частково. Повторіть тему.'; }
+  else { title = 'Потрібно поліпшити 📚'; sub = 'Не здавайся! Повторіть матеріал і спробуйте ще раз.'; }
+
+  document.getElementById('res-title').textContent = title;
+  document.getElementById('res-sub').textContent = sub;
+
+  const resultCircle = document.querySelector('.result-circle');
+  resultCircle.style.borderColor = pct >= 70 ? 'var(--success)' : pct >= 50 ? 'var(--accent3)' : 'var(--danger)';
+
+  // Save result
+  state.results.push({
+    student: state.sessionStudent,
+    testName: state.sessionTest.name,
+    testId: state.sessionTest.id,
+    pct, correct: state.sessionCorrect, total,
+    timeTaken, score: state.sessionScore,
+    date: new Date().toLocaleDateString('uk-UA')
+  });
+  save();
+}
+
+function retakeTest() {
+  document.getElementById('test-results').style.display = 'none';
+  document.getElementById('test-name-input').style.display = 'block';
+  document.getElementById('student-name').value = '';
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('active'); });
+});
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg, type = 'success') {
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(() => t.style.opacity = '0', 2500);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+load();
+</script>
+</body>
+</html>
