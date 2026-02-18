@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -594,6 +593,35 @@
   </div>
 </div>
 
+<!-- ============ ANTI-CHEAT OVERLAY ============ -->
+<div id="anticheat-overlay" style="
+  display:none; position:fixed; inset:0; z-index:9000;
+  background:rgba(0,0,0,0.97);
+  backdrop-filter:blur(20px);
+  align-items:center; justify-content:center;
+  flex-direction:column; text-align:center; padding:32px;
+">
+  <div style="
+    max-width:440px; background:#16161f;
+    border:2px solid #ef4444; border-radius:20px; padding:40px 36px;
+    box-shadow:0 0 60px rgba(239,68,68,0.3);
+  ">
+    <div style="font-size:52px;margin-bottom:16px;" id="ac-icon">🚨</div>
+    <div style="font-family:'Unbounded',sans-serif;font-size:20px;font-weight:800;color:#ef4444;margin-bottom:12px;" id="ac-title">
+      Порушення зафіксовано!
+    </div>
+    <div style="color:#6b6b80;font-size:14px;line-height:1.6;margin-bottom:8px;" id="ac-reason"></div>
+    <div style="
+      display:inline-flex;align-items:center;gap:8px;
+      background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);
+      border-radius:8px;padding:8px 16px;margin:16px 0;
+      font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700;color:#ef4444;
+    " id="ac-violations-badge"></div>
+    <div style="color:#6b6b80;font-size:12px;margin-bottom:24px;" id="ac-warning"></div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;" id="ac-actions"></div>
+  </div>
+</div>
+
 <!-- ============ MODAL: CREATE TEST ============ -->
 <div class="modal-overlay" id="modal-create-test">
   <div class="modal">
@@ -631,7 +659,11 @@ let state = {
   sessionTimer: null,
   sessionStartTime: null,
   sessionCorrect: 0,
-  sessionWrong: 0
+  sessionWrong: 0,
+  // anti-cheat
+  acViolations: 0,
+  acMaxViolations: 3,
+  acActive: false
 };
 
 const ADMIN_PASS = { user: 'admin', pass: 'admin123' };
@@ -1062,6 +1094,10 @@ function beginTest() {
   state.sessionCorrect = 0;
   state.sessionWrong = 0;
   state.sessionStartTime = Date.now();
+  state.acViolations = 0;
+  state.acActive = true;
+  _initW = window.innerWidth;
+  _initH = window.innerHeight;
   showQuestion();
 }
 
@@ -1224,6 +1260,7 @@ function nextQuestion() {
 
 function finishTest() {
   stopTimer();
+  state.acActive = false;
   document.getElementById('test-question').style.display = 'none';
   document.getElementById('test-results').style.display = 'block';
 
@@ -1287,6 +1324,109 @@ function toast(msg, type = 'success') {
   setTimeout(() => t.style.opacity = '0', 2500);
   setTimeout(() => t.remove(), 3000);
 }
+
+// ============================================================
+// ANTI-CHEAT SYSTEM
+// ============================================================
+function isTestActive() {
+  return state.acActive &&
+    document.getElementById('test-question') &&
+    document.getElementById('test-question').style.display !== 'none';
+}
+
+function acTrigger(reason) {
+  if (!isTestActive()) return;
+  stopTimer();
+  state.acViolations++;
+
+  const overlay = document.getElementById('anticheat-overlay');
+  overlay.style.display = 'flex';
+
+  document.getElementById('ac-reason').textContent = reason;
+  document.getElementById('ac-violations-badge').textContent =
+    `⚠️ Порушень: ${state.acViolations} / ${state.acMaxViolations}`;
+
+  const remaining = state.acMaxViolations - state.acViolations;
+  const actions = document.getElementById('ac-actions');
+
+  if (state.acViolations >= state.acMaxViolations) {
+    // Force disqualification
+    document.getElementById('ac-icon').textContent = '🚫';
+    document.getElementById('ac-title').textContent = 'Тест анульовано!';
+    document.getElementById('ac-warning').textContent =
+      'Ліміт порушень вичерпано. Результат не зараховується.';
+    actions.innerHTML = `
+      <button class="btn btn-danger" onclick="acDisqualify()">Завершити тест</button>`;
+  } else {
+    document.getElementById('ac-icon').textContent = '⚠️';
+    document.getElementById('ac-title').textContent = 'Увага! Порушення зафіксовано';
+    document.getElementById('ac-warning').textContent =
+      `Ще ${remaining} порушення — і тест буде анульовано автоматично.`;
+    actions.innerHTML = `
+      <button class="btn btn-primary" onclick="acResume()">Повернутись до тесту</button>
+      <button class="btn btn-danger btn-sm" onclick="acDisqualify()">Завершити</button>`;
+  }
+}
+
+function acResume() {
+  document.getElementById('anticheat-overlay').style.display = 'none';
+  const q = state.sessionTest.questions[state.sessionCurrent];
+  startTimer(Math.max(5, q.time - 3)); // slight penalty: -3s per violation
+}
+
+function acDisqualify() {
+  state.acActive = false;
+  document.getElementById('anticheat-overlay').style.display = 'none';
+  document.getElementById('test-question').style.display = 'none';
+  document.getElementById('test-results').style.display = 'block';
+
+  const total = state.sessionTest.questions.length;
+  // Count remaining questions as wrong
+  const skipped = total - state.sessionCurrent;
+  state.sessionWrong += skipped;
+  const pct = Math.round(state.sessionCorrect / total * 100);
+  const timeTaken = Math.round((Date.now() - state.sessionStartTime) / 1000);
+
+  document.getElementById('res-percent').textContent = pct + '%';
+  document.getElementById('res-correct').textContent = state.sessionCorrect;
+  document.getElementById('res-wrong').textContent = state.sessionWrong;
+  document.getElementById('res-time').textContent = timeTaken + 'с';
+  document.getElementById('res-title').textContent = '🚫 Тест анульовано';
+  document.getElementById('res-sub').textContent = `Зафіксовано ${state.acViolations} порушень. Результат збережено як незадовільний.`;
+  document.querySelector('.result-circle').style.borderColor = 'var(--danger)';
+
+  state.results.push({
+    student: state.sessionStudent + ' [ПОРУШЕННЯ]',
+    testName: state.sessionTest.name,
+    testId: state.sessionTest.id,
+    pct: 0, correct: state.sessionCorrect, total,
+    timeTaken, score: 0,
+    date: new Date().toLocaleDateString('uk-UA')
+  });
+  save();
+}
+
+// Detect tab switch / window minimize
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) acTrigger('Вкладка була згорнута або прихована.');
+});
+
+// Detect window blur (switching app, alt-tab, etc.)
+window.addEventListener('blur', () => {
+  acTrigger('Вікно браузера втратило фокус (можлива зміна вкладки або програми).');
+});
+
+// Detect window resize
+let _initW = window.innerWidth, _initH = window.innerHeight;
+window.addEventListener('resize', () => {
+  const dw = Math.abs(window.innerWidth - _initW);
+  const dh = Math.abs(window.innerHeight - _initH);
+  if (dw > 50 || dh > 50) {
+    acTrigger('Розмір вікна браузера було змінено.');
+    _initW = window.innerWidth;
+    _initH = window.innerHeight;
+  }
+});
 
 // ============================================================
 // INIT
